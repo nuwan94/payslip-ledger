@@ -97,7 +97,7 @@ main { padding: 26px max(20px, env(safe-area-inset-right, 0px)) 60px max(28px, e
 .select-value.placeholder { color: var(--ink-2); }
 .select-chev { color: var(--ink-2); flex: none; }
 .select.pill { width: auto; border-radius: 99px; padding: 5px 12px; font-size: 13px; }
-.popover { position: fixed; z-index: 50; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 4px; overflow-y: auto; min-width: 160px; }
+.popover { position: fixed; z-index: 100; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 4px; overflow-y: auto; min-width: 160px; }
 .option { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 5px; cursor: pointer; }
 .option.active { background: var(--surface-2); }
 .option[aria-selected='true'] { color: var(--accent); font-weight: 600; }
@@ -127,7 +127,7 @@ main { padding: 26px max(20px, env(safe-area-inset-right, 0px)) 60px max(28px, e
 
 /* tooltip, dialog, toast */
 .tooltip-wrap { display: inline-flex; }
-.tooltip { position: fixed; z-index: 70; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 6px; padding: 5px 9px; font-size: 12px; max-width: 260px; transform: translate(-50%, calc(-100% - 8px)); }
+.tooltip { position: fixed; z-index: 110; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 6px; padding: 5px 9px; font-size: 12px; max-width: 260px; transform: translate(-50%, calc(-100% - 8px)); }
 .tooltip.bottom { transform: translate(-50%, 8px); }
 .backdrop { position: fixed; inset: 0; background: rgba(20, 10, 14, 0.5); display: grid; place-items: center; z-index: 60; padding: 16px; }
 .dialog { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); width: min(440px, 100%); max-height: 90vh; display: flex; flex-direction: column; outline: none; }

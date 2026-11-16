@@ -47,12 +47,12 @@ export function Popover({ anchor, open, onClose, children, align = 'start', matc
     const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }
     const dismiss = (e: Event) => { if (!ref.current?.contains(e.target as Node)) onClose() }
     document.addEventListener('pointerdown', down)
-    document.addEventListener('keydown', key)
+    document.addEventListener('keydown', key, true)
     window.addEventListener('resize', onClose)
     window.addEventListener('scroll', dismiss, true)
     return () => {
       document.removeEventListener('pointerdown', down)
-      document.removeEventListener('keydown', key)
+      document.removeEventListener('keydown', key, true)
       window.removeEventListener('resize', onClose)
       window.removeEventListener('scroll', dismiss, true)
     }

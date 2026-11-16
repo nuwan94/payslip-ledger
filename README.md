@@ -22,7 +22,7 @@ pnpm build
 
 1. Push to a GitHub repository on the `main` branch.
 2. In the repo settings, set **Pages → Source** to **GitHub Actions**.
-3. The workflow in `.github/workflows/deploy.yml` builds with `VITE_BASE=/<repo-name>/` and publishes `dist`.
+3. The workflow in `.github/workflows/deploy.yml` builds with `VITE_BASE=/` (the app is served from the root of the custom domain `income.nuwan.dev`) and publishes `dist`. Without a custom domain, set `VITE_BASE` to `/<repo-name>/`.
 
 The app uses hash routing, so deep links work without server rewrites.
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { buildBackup, db, parseBackup, restoreBackup, wipeAll } from '../db'
 import { useLedger } from '../useLedger'
-import { usePref, loadPref, savePref, type Theme } from '../prefs'
+import { usePref, loadPref, savePref } from '../prefs'
 import { currentYm } from '../lib/dates'
 import { loadSample } from '../lib/sample'
 import { Badge, Button, Card, FileDrop, PageHead, Segmented } from '../components/ui'
@@ -11,7 +11,6 @@ import { useToast } from '../components/Toast'
 export function Backup() {
   const { employers, payslips } = useLedger()
   const [basis, setBasis] = usePref('basis', 'fy')
-  const [theme, setTheme] = usePref('theme', 'system' as Theme)
   const [last, setLast] = useState(() => loadPref('lastBackup', ''))
   const confirm = useConfirm()
   const toast = useToast()
@@ -71,8 +70,6 @@ export function Backup() {
             <h2>Preferences</h2>
             <div className="field"><label>Year basis</label>
               <Segmented ariaLabel="Year basis" value={basis} onChange={setBasis} options={[{ value: 'fy', label: 'Year of assessment (Apr–Mar)' }, { value: 'calendar', label: 'Calendar year' }]} /></div>
-            <div className="field"><label>Theme</label>
-              <Segmented ariaLabel="Theme" value={theme} onChange={setTheme} options={[{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} /></div>
             <hr className="divider" style={{ margin: '4px 0' }} />
             <h3>Data</h3>
             <div className="row">

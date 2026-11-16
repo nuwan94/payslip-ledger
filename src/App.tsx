@@ -2,6 +2,7 @@ import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { ToastProvider } from './components/Toast'
 import { ConfirmProvider } from './components/Dialog'
 import { Badge } from './components/ui'
+import { ThemeSwitch } from './components/ThemeSwitch'
 import { useLedger } from './useLedger'
 import { loadPref } from './prefs'
 import { Overview } from './pages/Overview'
@@ -24,7 +25,10 @@ function Shell() {
   return (
     <div className="app">
       <aside className="rail">
-        <div className="brand"><b>Payslip Ledger</b><span>Sri Lanka · income tracker</span></div>
+        <div className="rail-top">
+          <div className="brand"><b>Payslip Ledger</b><span>Sri Lanka · income tracker</span></div>
+          <ThemeSwitch />
+        </div>
         <nav className="nav" aria-label="Main">
           <NavLink to="/" end className={link}>Overview</NavLink>
           <NavLink to="/payslips" end className={link}>Payslips <span className="count">{payslips.length}</span></NavLink>

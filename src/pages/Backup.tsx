@@ -62,7 +62,7 @@ export function Backup() {
             </p>
             <hr className="divider" style={{ margin: '4px 0' }} />
             <h3>Restore</h3>
-            <FileDrop accept="application/json,.json" onFile={restore} title="Drop a backup file" hint="Replaces what is stored in this browser." />
+            <FileDrop accept="application/json,.json" onFiles={(f) => restore(f[0])} title="Drop a backup file" hint="Replaces what is stored in this browser." />
           </div>
         </Card>
         <Card>

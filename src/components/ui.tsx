@@ -106,21 +106,26 @@ export function AmountInput({ value, onChange, id, ariaLabel, placeholder = '0.0
 }
 
 /** Drop zone with a custom button. The real file input is hidden and driven by the button. */
-export function FileDrop({ accept, onFile, title, hint }: { accept: string; onFile: (f: File) => void; title: string; hint?: ReactNode }) {
+export function FileDrop({ accept, onFiles, title, hint, multiple }:
+  { accept: string; onFiles: (f: File[]) => void; title: string; hint?: ReactNode; multiple?: boolean }) {
   const input = useRef<HTMLInputElement>(null)
   const [over, setOver] = useState(false)
+  const take = (list: FileList | null | undefined) => {
+    const files = list ? [...list] : []
+    if (files.length) onFiles(multiple ? files : files.slice(0, 1))
+  }
   return (
     <div
       className={`dropzone ${over ? 'over' : ''}`}
       onDragOver={(e) => { e.preventDefault(); setOver(true) }}
       onDragLeave={() => setOver(false)}
-      onDrop={(e) => { e.preventDefault(); setOver(false); const f = e.dataTransfer.files[0]; if (f) onFile(f) }}
+      onDrop={(e) => { e.preventDefault(); setOver(false); take(e.dataTransfer.files) }}
     >
       <IconUpload width={22} height={22} />
       <b>{title}</b>
       {hint && <span className="muted small">{hint}</span>}
-      <Button variant="primary" onClick={() => input.current?.click()}>Choose file</Button>
-      <input ref={input} type="file" accept={accept} hidden tabIndex={-1} onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = '' }} />
+      <Button variant="primary" onClick={() => input.current?.click()}>{multiple ? 'Choose files' : 'Choose file'}</Button>
+      <input ref={input} type="file" accept={accept} multiple={multiple} hidden tabIndex={-1} onChange={(e) => { take(e.target.files); e.target.value = '' }} />
     </div>
   )
 }

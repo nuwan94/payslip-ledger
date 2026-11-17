@@ -261,3 +261,13 @@ tbody tr:hover { background: var(--surface-2); }
 .card.nopad { padding: 6px 8px; }
 .card.nopad .card-head { margin: 10px 10px 6px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.date-pop { padding: 10px; width: 264px; }
+.date-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.date-grid .dow { font-size: 11px; color: var(--ink-2); text-align: center; padding: 4px 0; }
+.date-cell { border: 1px solid transparent; background: none; border-radius: 6px; padding: 6px 0; font-variant-numeric: tabular-nums; }
+.date-cell:hover { background: var(--surface-2); }
+.date-cell.now { border-color: var(--line); }
+.date-cell.sel { background: var(--accent); color: var(--accent-ink); }
+.fxbox { margin-top: 14px; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; background: var(--fx-bg); }
+.fxbox .row { gap: 10px; }

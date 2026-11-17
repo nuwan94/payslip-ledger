@@ -41,6 +41,10 @@ export interface Payslip {
   currency: string
   /** LKR per 1 unit of `currency`. 1 for LKR. */
   rate: number
+  /** Where the rate came from: typed by hand, CBSL monthly average, or the CBSL rate on `rateDate`. */
+  rateSource?: 'manual' | 'cbsl-average' | 'cbsl-daily'
+  /** 'YYYY-MM-DD' of the CBSL business day used when `rateSource` is 'cbsl-daily'. */
+  rateDate?: string
   lines: Line[]
   source: 'manual' | 'pdf'
   createdAt: number
@@ -76,4 +80,4 @@ export const KIND_LABEL: Record<LineKind, string> = {
   employer_other: 'Employer · Other',
 }
 
-export const CURRENCIES = ['LKR', 'USD', 'GBP', 'EUR', 'AUD', 'SGD', 'AED', 'CAD', 'INR']
+export const CURRENCIES = ['LKR', 'USD', 'EUR', 'GBP', 'AUD', 'CAD', 'NZD', 'SGD', 'AED', 'SAR', 'QAR', 'JPY', 'INR', 'CHF', 'SEK', 'NOK', 'DKK', 'HKD', 'CNY', 'MYR']

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { Employer, Payslip } from '../types'
 import { formatYm } from '../lib/dates'
 import { fmt, fmt0, slipLkr, slipTotals } from '../lib/money'
+import { formatDate } from './DatePicker'
 import { CurrencyBadge } from './ui'
 import { Badge } from './ui'
 
@@ -33,7 +34,7 @@ export function SlipTable({ slips, employers, actions, showSource }: {
                 <td>{name(p.employerId)} <CurrencyBadge currency={p.currency} /></td>
                 <td className="r num">
                   {fmt(l.gross)}
-                  {p.currency !== 'LKR' && <span className="sub">{p.currency} {fmt0(slipTotals(p.lines).gross)} × {p.rate.toFixed(2)}</span>}
+                  {p.currency !== 'LKR' && <span className="sub">{p.currency} {fmt0(slipTotals(p.lines).gross)} × {p.rate.toFixed(2)}{p.rateSource === 'cbsl-average' ? ' · CBSL avg' : p.rateSource === 'cbsl-daily' && p.rateDate ? ` · CBSL ${formatDate(p.rateDate)}` : ''}</span>}
                 </td>
                 <td className="r num">{fmt(l.gross - l.net)}</td>
                 <td className="r num"><b style={{ fontWeight: 600 }}>{fmt(l.net)}</b></td>

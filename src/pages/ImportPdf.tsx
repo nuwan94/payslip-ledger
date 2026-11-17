@@ -12,6 +12,7 @@ import { KIND_LABEL, KIND_SECTION, type LineKind, type MapTarget, type Payslip }
 import { AmountInput, Badge, Button, Card, Checkbox, CurrencyBadge, Empty, FileDrop, LinkButton, PageHead } from '../components/ui'
 import { Select, type Option } from '../components/Select'
 import { MonthPicker } from '../components/MonthPicker'
+import { loadFx, monthlyAverage } from '../lib/fx'
 import { useToast } from '../components/Toast'
 import type { Draft } from './PayslipForm'
 
@@ -35,7 +36,7 @@ interface Item {
   done: boolean
   error?: string
 }
-interface ReviewRow { include: boolean; month: string; rate: number }
+interface ReviewRow { include: boolean; month: string; rate: number; /** Rate follows the CBSL monthly average until you type one. */ auto: boolean }
 type Stage = { type: 'upload' } | { type: 'map'; id: string } | { type: 'review' }
 
 const PERSONAL = /name|epf\s*n|nic|employee/i
@@ -59,6 +60,19 @@ export function ImportPdf() {
   const lastRate = (cur: string) =>
     [...payslips].filter((p) => p.currency === cur).sort((a, b) => b.month.localeCompare(a.month))[0]?.rate ?? 0
 
+  /** Sets the CBSL monthly average as the rate for a foreign-currency payslip, falling back to the last rate used. */
+  const fillRate = async (id: string, month: string) => {
+    if (!emp || !month) return
+    const cur = currencyFor(emp, month)
+    if (cur === 'LKR') return
+    const avg = monthlyAverage(await loadFx(cur, month), month)
+    setReview((r) => {
+      const row = r[id]
+      if (!row || !row.auto) return r
+      return { ...r, [id]: avg ? { ...row, rate: avg.rate } : { ...row, rate: lastRate(cur), auto: false } }
+    })
+  }
+
   const enterReview = (list: Item[]) => {
     if (!emp) return
     const init: Record<string, ReviewRow> = {}
@@ -69,10 +83,11 @@ export function ImportPdf() {
       const dupKey = `${month}`
       const exists = !!month && (payslips.some((p) => p.employerId === emp.id && p.month === month) || seen.has(dupKey))
       if (month) seen.add(dupKey)
-      init[it.id] = { include: !exists && !!month, month, rate: lastRate(month ? currencyFor(emp, month) : 'LKR') }
+      init[it.id] = { include: !exists && !!month, month, rate: 0, auto: true }
     }
     setReview(init)
     setStage({ type: 'review' })
+    for (const [id, r] of Object.entries(init)) void fillRate(id, r.month)
   }
 
   const advance = (list: Item[]) => {
@@ -271,7 +286,7 @@ export function ImportPdf() {
   const failed = items.filter((i) => i.error)
   const setRow = (id: string, patch: Partial<ReviewRow>) => setReview((r) => ({ ...r, [id]: { ...r[id], ...patch } }))
   const meta = (it: Item) => {
-    const r = review[it.id] ?? { include: false, month: '', rate: 0 }
+    const r = review[it.id] ?? { include: false, month: '', rate: 0, auto: true }
     const cur = emp && r.month ? currencyFor(emp, r.month) : 'LKR'
     const lines = rowsToLines(it.rows)
     const totals = slipTotals(lines)
@@ -293,7 +308,7 @@ export function ImportPdf() {
     const now = Date.now()
     const slips: Payslip[] = included.map((it) => {
       const m = meta(it)
-      return { id: uid(), employerId: emp.id, month: m.r.month, currency: m.cur, rate: m.fx ? m.r.rate : 1, lines: m.lines, source: 'pdf', createdAt: now }
+      return { id: uid(), employerId: emp.id, month: m.r.month, currency: m.cur, rate: m.fx ? m.r.rate : 1, rateSource: m.fx ? (m.r.auto ? 'cbsl-average' : 'manual') : undefined, lines: m.lines, source: 'pdf', createdAt: now }
     })
     const known = new Set(emp.lines.map((l) => `${l.name}|${l.kind}`))
     const added: { name: string; kind: LineKind }[] = []
@@ -343,7 +358,7 @@ export function ImportPdf() {
                     </td>
                     <td style={{ maxWidth: 200, overflowWrap: 'anywhere' }}>{it.fileName}</td>
                     <td style={{ minWidth: 170 }}>
-                      <MonthPicker ariaLabel={`Pay month for ${it.fileName}`} value={m.r.month} onChange={(v) => setRow(it.id, { month: v, rate: m.r.rate || lastRate(emp ? currencyFor(emp, v) : 'LKR') })} />
+                      <MonthPicker ariaLabel={`Pay month for ${it.fileName}`} value={m.r.month} onChange={(v) => { setRow(it.id, { month: v, auto: true }); void fillRate(it.id, v) }} />
                       {m.dup && <div className="hint" style={{ marginTop: 4 }}><Badge tone="warn">{m.dup}</Badge></div>}
                     </td>
                     <td className="r num">{m.cur} {fmt(m.totals.gross)}</td>
@@ -355,7 +370,7 @@ export function ImportPdf() {
                       </div>
                     </td>
                     <td style={{ width: 130 }}>
-                      {m.fx ? <div className="row" style={{ flexWrap: 'nowrap' }}><CurrencyBadge currency={m.cur} /><AmountInput ariaLabel={`Rate for ${it.fileName}`} value={m.r.rate} blankZero onChange={(rate) => setRow(it.id, { rate })} /></div> : <span className="muted small">LKR</span>}
+                      {m.fx ? <div className="row" style={{ flexWrap: 'nowrap' }}><CurrencyBadge currency={m.cur} /><AmountInput ariaLabel={`Rate for ${it.fileName}`} value={m.r.rate} blankZero onChange={(rate) => setRow(it.id, { rate, auto: false })} /></div> : <span className="muted small">LKR</span>}
                     </td>
                     <td className="r"><Button small onClick={() => openInForm(it)}>Edit in form</Button></td>
                   </tr>

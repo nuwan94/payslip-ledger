@@ -30,5 +30,6 @@ The app uses hash routing, so deep links work without server rewrites.
 
 - An **employer** has a currency history: "USD from Aug 2026" applies to that month onward; older payslips keep their currency.
 - A **payslip** stores lines in its own currency plus the LKR-per-unit rate you enter, so past months never change when rates move.
+- **Exchange rates**: `rules/fx/<ccy>-<yyyy>-<yy>.json` holds Central Bank of Sri Lanka (CBSL) daily indicative rates and monthly averages for 19 currencies, one file per year of assessment (same layout as `nuwan94/tax-simplified`). The payslip form offers the CBSL monthly average or the rate on the day you were paid; you can still type your bank's rate. Refresh with `node scripts/fx-rates.mjs [startYear] [CCY…]`; a scheduled workflow does this monthly and redeploys.
 - **PDF import**: the first PDF for an employer opens a field map (auto-matched, questionable rows flagged, totals reconciled). Saving the map lets later PDFs skip the editor when every label is known and the totals add up. Text PDFs only; scanned images are not supported.
 - Name and EPF number on a payslip are never stored.

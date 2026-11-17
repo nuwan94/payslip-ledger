@@ -1,0 +1,43 @@
+name: Refresh CBSL exchange rates
+
+on:
+  schedule:
+    # 03:30 UTC on the 3rd of every month, to pick up the previous month's business days.
+    - cron: '30 3 3 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Download rates for the current year of assessment
+        run: |
+          year=$(date -u +%Y); month=$(date -u +%m)
+          # A year of assessment runs April to March, so before April we are still in last year's.
+          if [ "$((10#$month))" -ge 4 ]; then cur=$year; else cur=$((year - 1)); fi
+          node scripts/fx-rates.mjs "$cur"
+          # Early in a new year, also close out the one that just ended.
+          if [ "$((10#$month))" -le 5 ]; then node scripts/fx-rates.mjs "$((cur - 1))"; fi
+      - name: Commit and redeploy if rates changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff -I'"retrievedOn"' --quiet -- rules/fx; then
+            echo "No new rates."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add rules/fx
+          git commit -m "chore: refresh CBSL exchange rates"
+          git push
+          # Pushes made with GITHUB_TOKEN do not start other workflows, so start the deploy directly.
+          gh workflow run deploy.yml

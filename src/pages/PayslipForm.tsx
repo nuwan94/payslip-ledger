@@ -10,6 +10,8 @@ import { fmt, r2, slipTotals } from '../lib/money'
 import { AmountInput, Badge, Button, Card, CurrencyBadge, Empty, Field, LinkButton, PageHead } from '../components/ui'
 import { Select, type Option } from '../components/Select'
 import { MonthPicker } from '../components/MonthPicker'
+import { DatePicker, formatDate } from '../components/DatePicker'
+import { dailyRate, loadFx, monthlyAverage, type FxRates } from '../lib/fx'
 import { IconPlus, IconTrash } from '../components/Icons'
 import { Tooltip } from '../components/Tooltip'
 import { useToast } from '../components/Toast'
@@ -49,6 +51,10 @@ export function PayslipForm() {
   const [employerId, setEmployerId] = useState(draft?.employerId ?? '')
   const [month, setMonth] = useState(draft?.month ?? currentYm())
   const [rate, setRate] = useState(0)
+  const [rateSource, setRateSource] = useState<'manual' | 'cbsl-average' | 'cbsl-daily'>('manual')
+  const [rateDate, setRateDate] = useState('')
+  const [fxState, setFxState] = useState<{ key: string; data: FxRates | null } | null>(null)
+  const monthTouched = useRef(false)
   const [lines, setLines] = useState<LineDraft[]>(() => draft?.lines.map(withKey) ?? [])
   const [netPrinted, setNetPrinted] = useState(0)
   const [source, setSource] = useState<'manual' | 'pdf'>(draft?.source ?? 'manual')
@@ -61,6 +67,7 @@ export function PayslipForm() {
     if (!existing || loaded.current) return
     loaded.current = true
     setEmployerId(existing.employerId); setMonth(existing.month); setRate(existing.rate)
+    setRateSource(existing.rateSource ?? 'manual'); setRateDate(existing.rateDate ?? '')
     setLines(existing.lines.map(withKey)); setSource(existing.source); setStoredCurrency(existing.currency)
     dirty.current = true
   }, [existing])
@@ -78,12 +85,38 @@ export function PayslipForm() {
     setLines(emp.lines.map((l) => withKey({ ...l, amount: 0 })))
   }, [isNew, emp?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Default the rate to the latest one used in this currency.
+  // Load the CBSL rates file for this currency and pay month. `fxData` is undefined until it matches the current key.
+  const fxKeyNow = fx ? `${currency}|${month}` : ''
   useEffect(() => {
-    if (!fx || rate > 0) return
-    const last = [...payslips].filter((p) => p.currency === currency).sort((a, b) => b.month.localeCompare(a.month))[0]
-    if (last) setRate(last.rate)
-  }, [fx, currency, payslips, rate])
+    if (!fx) return
+    let live = true
+    loadFx(currency, month).then((d) => { if (live) setFxState({ key: `${currency}|${month}`, data: d }) })
+    return () => { live = false }
+  }, [fx, currency, month])
+  const fxData: FxRates | null | undefined = !fx ? null : fxState?.key === fxKeyNow ? fxState.data : undefined
+  const avg = useMemo(() => monthlyAverage(fxData ?? null, month), [fxData, month])
+
+  // Fill the rate: CBSL monthly average when known, otherwise the latest rate used in this currency.
+  useEffect(() => {
+    if (!fx || fxData === undefined) return
+    const auto = isNew ? rate === 0 || rateSource === 'cbsl-average' : monthTouched.current && rateSource === 'cbsl-average'
+    if (!auto) return
+    if (avg) {
+      if (rate !== avg.rate) setRate(avg.rate)
+      if (rateSource !== 'cbsl-average') setRateSource('cbsl-average')
+      return
+    }
+    if (rate === 0) {
+      const last = [...payslips].filter((p) => p.currency === currency).sort((a, b) => b.month.localeCompare(a.month))[0]
+      if (last) { setRate(last.rate); setRateSource('manual') }
+    }
+  }, [fx, fxData, avg, isNew, rate, rateSource, currency, payslips])
+
+  const applyDaily = (date: string) => {
+    const d = dailyRate(fxData ?? null, date)
+    if (!d) { toast('No CBSL rate stored for that date', 'bad'); return }
+    setRate(d.rate); setRateSource('cbsl-daily'); setRateDate(d.date)
+  }
 
   const edit = (fn: (l: LineDraft[]) => LineDraft[]) => { dirty.current = true; setLines(fn) }
   const totals = useMemo(() => slipTotals(lines), [lines])
@@ -95,7 +128,7 @@ export function PayslipForm() {
     if (!prev) { toast('No earlier payslip for this employer', 'bad'); return }
     dirty.current = true
     setLines(prev.lines.map(withKey))
-    if (prev.currency === currency) setRate(prev.rate)
+    if (prev.currency === currency) { setRate(prev.rate); setRateSource(prev.rateSource ?? 'manual'); setRateDate(prev.rateDate ?? '') }
     toast(`Copied ${formatYm(prev.month)}`, 'good')
   }
 
@@ -113,6 +146,7 @@ export function PayslipForm() {
 
     const slip: Payslip = {
       id: isNew ? uid() : id, employerId: emp.id, month, currency, rate: fx ? rate : 1,
+      rateSource: fx ? rateSource : undefined, rateDate: fx && rateSource === 'cbsl-daily' ? rateDate : undefined,
       lines: kept, source, createdAt: existing?.createdAt ?? Date.now(),
     }
     const known = new Set(emp.lines.map((l) => `${l.name}|${l.kind}`))
@@ -150,7 +184,7 @@ export function PayslipForm() {
               options={employers.map((e) => ({ value: e.id, label: e.name }))} />
           </Field>
           <Field label="Pay month" htmlFor="f-month">
-            <MonthPicker id="f-month" value={month} onChange={(m) => { setStoredCurrency(null); setMonth(m) }} />
+            <MonthPicker id="f-month" value={month} onChange={(m) => { monthTouched.current = true; setStoredCurrency(null); setMonth(m) }} />
           </Field>
           <Field label="Salary currency">
             <div className="row" style={{ minHeight: 36 }}>
@@ -160,11 +194,34 @@ export function PayslipForm() {
           </Field>
           {fx && (
             <Field label={`Rate (LKR per ${currency})`} htmlFor="f-rate">
-              <AmountInput id="f-rate" value={rate} onChange={setRate} />
+              <AmountInput id="f-rate" value={rate} onChange={(n) => { setRate(n); setRateSource('manual'); setRateDate('') }} />
             </Field>
           )}
         </div>
-        {fx && <div className="callout" style={{ marginTop: 14 }}>Enter the rate your bank actually credited you at. Each line's LKR value is stored with the payslip so later rate changes never alter past months.</div>}
+        {fx && (
+          <div className="fxbox">
+            <div className="row">
+              <b>CBSL rate</b>
+              {fxData === undefined ? <span className="muted small">Loading…</span> : avg ? (
+                <>
+                  <Button small onClick={() => { setRate(avg.rate); setRateSource('cbsl-average'); setRateDate('') }}>Use {formatYm(month, true)} average {avg.rate.toFixed(4)}</Button>
+                  <span className="muted small">mean of {avg.days} business day{avg.days === 1 ? '' : 's'}{avg.partial ? ' so far this month' : ''}</span>
+                </>
+              ) : <span className="muted small">No {currency} rate stored for {formatYm(month)} yet. Type the rate your bank used.</span>}
+            </div>
+            {fxData && (
+              <div className="row">
+                <span className="small">Or the CBSL rate on the day you were paid</span>
+                <div style={{ width: 170 }}><DatePicker ariaLabel="Date paid" viewMonth={month} value={rateDate} onChange={applyDaily} /></div>
+              </div>
+            )}
+            <p className="small muted">
+              Rate used: {rateSource === 'manual' ? 'typed by you' : rateSource === 'cbsl-average' ? `CBSL ${formatYm(month)} average` : `CBSL rate on ${rateDate ? formatDate(rateDate) : ''}`}.
+              {' '}The Inland Revenue Act (s.27) uses the CBSL rate on the date the amount is taken into account; the monthly average is the estimate when you do not know it.
+              The LKR values are stored with the payslip, so later rate changes never alter past months.
+            </p>
+          </div>
+        )}
         {draft?.pdfCurrency && draft.pdfCurrency !== currency && (
           <div className="callout warn" style={{ marginTop: 14 }}>
             The PDF shows {draft.pdfCurrency} but this employer is set to {currency} for {formatYm(month)}. Check the employer's currency history if that is wrong.

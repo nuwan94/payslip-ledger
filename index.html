@@ -2,12 +2,58 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#8d1b3d" />
-    <title>Payslip Ledger</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Payslip Ledger – Sri Lankan salary income tracker</title>
+    <meta name="description" content="Track your Sri Lankan salary from payslips, month by month and by year of assessment. Supports several employers, foreign-currency pay and PDF import. Your data never leaves your browser." />
+    <meta name="keywords" content="Sri Lanka payslip, salary tracker, APIT, EPF, ETF, income tracker, year of assessment, foreign currency salary" />
+    <meta name="author" content="Nuwan" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://income.nuwan.dev/" />
+
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#8d1b3d" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#171114" media="(prefers-color-scheme: dark)" />
+
+    <link rel="icon" href="%BASE_URL%favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="%BASE_URL%favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
+    <link rel="mask-icon" href="%BASE_URL%safari-pinned-tab.svg" color="#8d1b3d" />
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Payslip Ledger" />
+    <meta property="og:title" content="Payslip Ledger – Sri Lankan salary income tracker" />
+    <meta property="og:description" content="Month-by-month take-home, APIT and EPF from your payslips. LKR and foreign-currency employers, PDF import, private by design." />
+    <meta property="og:url" content="https://income.nuwan.dev/" />
+    <meta property="og:image" content="https://income.nuwan.dev/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Payslip Ledger: Sri Lankan salary income, month by month" />
+    <meta property="og:locale" content="en_LK" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Payslip Ledger – Sri Lankan salary income tracker" />
+    <meta name="twitter:description" content="Month-by-month take-home, APIT and EPF from your payslips. Private by design." />
+    <meta name="twitter:image" content="https://income.nuwan.dev/og-image.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Payslip Ledger",
+        "url": "https://income.nuwan.dev/",
+        "description": "Track Sri Lankan salary income from payslips, month by month, with foreign-currency employers and PDF import. Data stays in the browser.",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires a modern browser with IndexedDB",
+        "inLanguage": "en",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "LKR" }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>Payslip Ledger needs JavaScript to run. Your payslip data is stored only in your browser.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

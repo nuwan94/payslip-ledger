@@ -4,7 +4,8 @@ import { useLedger } from '../useLedger'
 import { CURRENCIES, KIND_LABEL, type Employer, type LineKind, type TemplateLine } from '../types'
 import { currencyFor, setCurrencyFrom } from '../lib/employer'
 import { currentYm, formatYm } from '../lib/dates'
-import { Badge, Button, Card, CurrencyBadge, Empty, Field, PageHead } from '../components/ui'
+import { AmountInput, Badge, Button, Card, CurrencyBadge, Empty, Field, PageHead } from '../components/ui'
+import { fmt } from '../lib/money'
 import { Select } from '../components/Select'
 import { MonthPicker } from '../components/MonthPicker'
 import { Dialog, useConfirm } from '../components/Dialog'
@@ -68,7 +69,7 @@ export function Employers() {
                   </div>
                   <div>
                     <p className="small muted" style={{ marginBottom: 6 }}>Payslip lines</p>
-                    <div className="chips">{e.lines.length ? e.lines.map((l) => <span className="tag" key={l.name + l.kind}>{l.name}</span>) : <span className="muted small">None yet. They are learned from your payslips.</span>}</div>
+                    <div className="chips">{e.lines.length ? e.lines.map((l) => <span className="tag" key={l.name + l.kind}>{l.name}{l.amount ? ` · ${fmt(l.amount)}` : ''}</span>) : <span className="muted small">None yet. They are learned from your payslips.</span>}</div>
                   </div>
                   <div className="row">
                     <Button small onClick={() => setMode({ type: 'currency', emp: e })}>Change currency</Button>
@@ -146,18 +147,24 @@ function LinesDialog({ emp, onClose }: { emp: Employer; onClose: () => void }) {
   const set = (key: string, patch: Partial<TemplateLine>) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)))
   const save = async () => {
     if (!name.trim()) { toast('Enter the employer name', 'bad'); return }
-    const clean = lines.filter((l) => l.name.trim()).map(({ key: _k, ...l }) => ({ ...l, name: l.name.trim() }))
+    const clean = lines.filter((l) => l.name.trim()).map(({ key: _k, ...l }) => ({ ...l, name: l.name.trim(), amount: l.amount || undefined }))
     await db.employers.put({ ...emp, name: name.trim(), lines: clean })
     toast('Saved', 'good'); onClose()
   }
   return (
     <Dialog open wide onClose={onClose} title="Edit employer" footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" onClick={save}>Save</Button></>}>
       <Field label="Name" htmlFor="lines-name"><input id="lines-name" className="input" value={name} onChange={(e) => setName(e.target.value)} /></Field>
-      <p className="small muted">Lines pre-fill each new payslip for this employer.</p>
+      <p className="small muted">Lines pre-fill each new payslip for this employer. Give a line a default amount (in {currencyFor(emp, currentYm())}) for fixed items such as stamp duty or a club fee; leave it blank when it changes every month.</p>
+      {lines.length > 0 && (
+        <div className="row small muted" style={{ flexWrap: 'nowrap' }}>
+          <span style={{ flex: 1 }}>Line</span><span style={{ width: 190 }}>Type</span><span style={{ width: 130, textAlign: 'right' }}>Default amount</span><span style={{ width: 28 }} />
+        </div>
+      )}
       {lines.map((l) => (
         <div className="row" key={l.key} style={{ flexWrap: 'nowrap' }}>
           <input className="input" aria-label="Line name" value={l.name} onChange={(e) => set(l.key, { name: e.target.value })} />
-          <div style={{ width: 230, flex: 'none' }}><Select ariaLabel="Line type" value={l.kind} options={KIND_OPTIONS} onChange={(kind) => set(l.key, { kind })} /></div>
+          <div style={{ width: 190, flex: 'none' }}><Select ariaLabel="Line type" value={l.kind} options={KIND_OPTIONS} onChange={(kind) => set(l.key, { kind })} /></div>
+          <div style={{ width: 130, flex: 'none' }}><AmountInput ariaLabel={`Default amount for ${l.name || 'line'}`} value={l.amount ?? 0} blankZero onChange={(amount) => set(l.key, { amount: amount || undefined })} /></div>
           <button type="button" className="icon-btn" aria-label={`Remove ${l.name || 'line'}`} onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}><IconTrash /></button>
         </div>
       ))}

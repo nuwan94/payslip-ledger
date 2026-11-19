@@ -188,8 +188,9 @@ tbody tr:hover { background: var(--surface-2); }
 /* payslip form */
 .form-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .lines { display: flex; flex-direction: column; gap: 8px; }
-.line { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 0.9fr) 28px; gap: 10px; align-items: center; }
-.line.no-eq { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 1fr) 28px; }
+.line { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 0.9fr) 28px 28px; gap: 10px; align-items: center; }
+.line.no-eq { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 1fr) 28px 28px; }
+.icon-btn.pin[aria-pressed='true'] { color: var(--accent); background: var(--accent-soft); }
 .line.head { font-size: 12px; color: var(--ink-2); }
 .line .eq { text-align: right; color: var(--ink-2); font-size: 13px; }
 .totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
@@ -251,7 +252,7 @@ tbody tr:hover { background: var(--surface-2); }
 @media (max-width: 520px) {
   .kpis, .totals { grid-template-columns: minmax(0, 1fr); }
   .form-row { grid-template-columns: minmax(0, 1fr); }
-  .line { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 28px; }
+  .line, .line.no-eq { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 28px 28px; }
   .line .eq, .line.head { display: none; }
   .line .select { grid-column: auto; }
   .map { grid-template-columns: minmax(0, 1fr); }

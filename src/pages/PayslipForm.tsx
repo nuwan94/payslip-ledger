@@ -12,7 +12,7 @@ import { Select, type Option } from '../components/Select'
 import { MonthPicker } from '../components/MonthPicker'
 import { DatePicker, formatDate } from '../components/DatePicker'
 import { dailyRate, loadFx, monthlyAverage, type FxRates } from '../lib/fx'
-import { IconPlus, IconTrash } from '../components/Icons'
+import { IconPin, IconPlus, IconTrash } from '../components/Icons'
 import { Tooltip } from '../components/Tooltip'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/Dialog'
@@ -82,7 +82,7 @@ export function PayslipForm() {
   // Start a new payslip from the employer's saved lines.
   useEffect(() => {
     if (!isNew || !emp || dirty.current) return
-    setLines(emp.lines.map((l) => withKey({ ...l, amount: 0 })))
+    setLines(emp.lines.map((l) => withKey({ ...l, amount: l.amount ?? 0 })))
   }, [isNew, emp?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load the CBSL rates file for this currency and pay month. `fxData` is undefined until it matches the current key.
@@ -122,6 +122,22 @@ export function PayslipForm() {
   const totals = useMemo(() => slipTotals(lines), [lines])
   const k = fx ? rate : 1
   const netOff = netPrinted > 0 ? r2(netPrinted - totals.net) : null
+
+  const defaultOf = (l: LineDraft) => emp?.lines.find((t) => t.name === l.name.trim() && t.kind === l.kind)?.amount
+
+  /** Pins this line's current amount as the employer's default for new payslips, or clears it. */
+  const togglePin = async (l: LineDraft) => {
+    const name = l.name.trim()
+    if (!emp || !name) { toast('Give the line a name first', 'bad'); return }
+    const idx = emp.lines.findIndex((t) => t.name === name && t.kind === l.kind)
+    const pinned = defaultOf(l) !== undefined && defaultOf(l) === l.amount
+    if (!pinned && l.amount === 0) { toast('Enter an amount to use as the default', 'bad'); return }
+    const next = [...emp.lines]
+    if (idx >= 0) next[idx] = { ...next[idx], amount: pinned ? undefined : l.amount }
+    else next.push({ name, kind: l.kind, amount: l.amount })
+    await db.employers.put({ ...emp, lines: next })
+    toast(pinned ? `Default cleared for ${name}` : `${name} now starts at ${currency} ${fmt(l.amount)} on new payslips`, 'good')
+  }
 
   const copyLast = () => {
     const prev = payslips.filter((p) => p.employerId === employerId && p.month < month).sort((a, b) => b.month.localeCompare(a.month))[0]
@@ -240,7 +256,7 @@ export function PayslipForm() {
               </div>
               <div className="lines">
                 {rows.length > 0 && (
-                  <div className={`line head ${fx ? '' : 'no-eq'}`}><span>Line</span><span>Type</span><span style={{ textAlign: 'right' }}>Amount ({currency})</span>{fx && <span style={{ textAlign: 'right' }}>LKR value</span>}<span /></div>
+                  <div className={`line head ${fx ? '' : 'no-eq'}`}><span>Line</span><span>Type</span><span style={{ textAlign: 'right' }}>Amount ({currency})</span>{fx && <span style={{ textAlign: 'right' }}>LKR value</span>}<span /><span /></div>
                 )}
                 {rows.length === 0 && <p className="muted small">None on this employer's payslip.</p>}
                 {rows.map((l) => (
@@ -252,6 +268,9 @@ export function PayslipForm() {
                     <AmountInput ariaLabel={`${l.name || 'Line'} amount`} value={l.amount} blankZero
                       onChange={(amount) => edit((all) => all.map((x) => (x.key === l.key ? { ...x, amount } : x)))} />
                     {fx && <span className="eq num">{fmt(l.amount * k)}</span>}
+                    <Tooltip content={defaultOf(l) !== undefined && defaultOf(l) === l.amount ? 'Default for new payslips. Click to clear' : 'Use this amount as the default for new payslips'}>
+                      <button type="button" className="icon-btn pin" aria-pressed={defaultOf(l) !== undefined && defaultOf(l) === l.amount} aria-label={`Default amount for ${l.name || 'line'}`} onClick={() => togglePin(l)}><IconPin /></button>
+                    </Tooltip>
                     <Tooltip content="Remove line">
                       <button type="button" className="icon-btn" aria-label={`Remove ${l.name || 'line'}`} onClick={() => edit((all) => all.filter((x) => x.key !== l.key))}><IconTrash /></button>
                     </Tooltip>

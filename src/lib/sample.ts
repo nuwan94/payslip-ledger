@@ -10,8 +10,8 @@ export async function loadSample(today: string): Promise<void> {
     id: uid(), name: 'Lanka Software (Pvt) Ltd', endedOn: ym(-4),
     currencies: [{ from: ym(-12), currency: 'LKR' }],
     lines: [
-      { name: 'Basic Salary', kind: 'basic' }, { name: 'Variable Allowance', kind: 'allowance' }, { name: 'Ex Gratia', kind: 'bonus' },
-      { name: 'EPF 8%', kind: 'epf' }, { name: 'APIT', kind: 'apit' }, { name: 'Sports Club', kind: 'deduction_other' }, { name: 'Stamp Duty', kind: 'stamp' },
+      { name: 'Basic Salary', kind: 'basic', amount: 350000 }, { name: 'Variable Allowance', kind: 'allowance' }, { name: 'Ex Gratia', kind: 'bonus' },
+      { name: 'EPF 8%', kind: 'epf', amount: 28000 }, { name: 'APIT', kind: 'apit' }, { name: 'Sports Club', kind: 'deduction_other', amount: 250 }, { name: 'Stamp Duty', kind: 'stamp', amount: 25 },
       { name: 'EPF 12%', kind: 'er_epf' }, { name: 'ETF 3%', kind: 'er_etf' },
     ],
   }

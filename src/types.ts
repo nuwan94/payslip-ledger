@@ -21,6 +21,8 @@ export interface CurrencyPeriod {
 export interface TemplateLine {
   name: string
   kind: LineKind
+  /** Fixed default amount in the employer's salary currency, pre-filled on new payslips. */
+  amount?: number
 }
 
 export interface Employer {
